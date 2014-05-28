@@ -64,9 +64,8 @@ def index():
             image = Image.open(os.path.join(TEST_DIR, 'static', 'bresenham', 'solutions', 'rays.bmp')).resize([512, 512])
             diff = ImageChops.difference(solution, image)
 
-            solution.save(os.path.join(RESULT_DIR, 'rays.bmp'))
-            image.save(os.path.join(TEST_DIR, 'static', 'bresenham', 'solutions', 'rays.bmp'))
-            diff.save(os.path.join(RESULT_DIR, 'diff-rays.bmp'))
+            solution.save(os.path.join(RESULT_DIR, 'rays.jpg'), "JPEG", quality=80, optimize=True)
+            diff.save(os.path.join(RESULT_DIR, 'diff-rays.jpg'), "JPEG", quality=80, optimize=True)
 
             lock.release()
 
