@@ -1,5 +1,3 @@
-#include "Pixelator.h"
-
 void testRand() {
     Pixelator p( 512, 512, 64, 64 );
 

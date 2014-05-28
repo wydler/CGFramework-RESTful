@@ -33,6 +33,10 @@
         loadstart: function() {
             bar.css("width", "0%").text("0%");
             progressbar.removeClass("uk-hidden");
+
+            $("#solution").attr("src", "")
+            $("#image").attr("src", "")
+            $("#diff").attr("src", "")
         },
 
         progress: function(percent) {
