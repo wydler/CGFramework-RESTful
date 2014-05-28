@@ -67,7 +67,7 @@ def index():
                 STOP_FLAG = proc.returncode
 
             if not STOP_FLAG:
-                proc = subprocess.Popen('make', shell=True, cwd=BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                proc = subprocess.Popen('make test', shell=True, cwd=BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 while proc.poll() is None:
                     line = proc.stdout.readline()
                     if line:
