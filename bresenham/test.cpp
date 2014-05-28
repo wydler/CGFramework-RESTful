@@ -26,19 +26,19 @@ void testRays() {
     const unsigned int w = p.getWidth();
     const unsigned int h = p.getHeight();
     //some test cases
-    for(int y = 0; y < h; y += 8)
+    for(unsigned int y = 0; y < h; y += 8)
     {
         drawLineBresenham(p, w/2, h/2, w - 1, y, 255, 255, (255 * y) / h);
     }
-    for(int x = 0; x < w; x += 8)
+    for(unsigned int x = 0; x < w; x += 8)
     {
         drawLineBresenham(p, w/2, h/2, x, h - 1, 0, (255 * x) / h, 255);
     }
-    for(int y = 0; y < h; y += 8)
+    for(unsigned int y = 0; y < h; y += 8)
     {
         drawLineBresenham(p, w/2, h/2, 0, y, (255 * y) / h, 255, 255);
     }
-    for(int x = 0; x < w; x += 8)
+    for(unsigned int x = 0; x < w; x += 8)
     {
         drawLineBresenham(p, w/2, h/2, x, 0, 255, (255 * x) / h, 0);
     }
@@ -46,7 +46,7 @@ void testRays() {
     p.writeBMP("rays.bmp");
 }
 
-int main( int argc, char ** argv )
+int main()
 {
     testRand();
     testRays();
