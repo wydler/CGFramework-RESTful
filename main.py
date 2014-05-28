@@ -23,7 +23,6 @@ ALLOWED_EXTENSIONS = set(['cpp'])
 
 app = Flask(__name__)
 app.debug = True
-app.host = '0.0.0.0'
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
@@ -114,4 +113,4 @@ def add_numbers():
 
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', debug=True)
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0')
