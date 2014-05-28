@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type=text/javascript>
+  $(function() {
+    var submit_form = function(e) {
+      $.getJSON($SCRIPT_ROOT + '/_add_numbers', {
+        a: $('input[name="a"]').val(),
+        b: $('input[name="b"]').val()
+      }, function(data) {
+        $('#result').text(data.result);
+        $('input[name=a]').focus().select();
+      });
+      return false;
+    };
+
+    $('a#calculate').bind('click', submit_form);
+
+    $('input[type=text]').bind('keydown', function(e) {
+      if (e.keyCode == 13) {
+        submit_form(e);
+      }
+    });
+
+    $('input[name=a]').focus();
+    var progressbar = $("#progressbar"),
+        bar         = progressbar.find('.uk-progress-bar'),
+        settings    = {
+
+        action: '/bresenham', // upload url
+
+        allow : '*.(cpp)', // allow only images
+
+        loadstart: function() {
+            bar.css("width", "0%").text("0%");
+            progressbar.removeClass("uk-hidden");
+        },
+
+        progress: function(percent) {
+            percent = Math.ceil(percent);
+            bar.css("width", percent+"%").text(percent+"%");
+        },
+
+        allcomplete: function(response) {
+
+            bar.css("width", "100%").text("100%");
+
+            obj = JSON.parse(response);
+            $("#solution").attr("src", "static/bresenham/solutions/rays.bmp")
+            $("#image").attr("src", "static/bresenham/results/"+obj.id+"/rays.bmp")
+            $("#diff").attr("src", "static/bresenham/results/"+obj.id+"/diff-rays.bmp")
+
+            $("#details").removeClass("uk-hidden");
+        }
+    };
+
+    var select = new $.UIkit.upload.select($("#upload-select"), settings),
+        drop   = new $.UIkit.upload.drop($("#upload-drop"), settings);
+  });
+</script>
+
+<h1>Bresenham</h1>
+<div id="upload-drop" class="uk-placeholder uk-text-center">
+    <i class="uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i> Attach source file by dropping them here or <a class="uk-form-file">selecting one <input id="upload-select" type="file"></a>.
+</div>
+
+<div id="progressbar" class="uk-progress uk-hidden">
+  <div class="uk-progress-bar" style="width: 0%;">0%</div>
+</div>
+
+<div id="details" class="uk-grid uk-hidden">
+  <div class="uk-width-large-1-3 uk-text-center">
+    <h2>Original</h2>
+    <img id="solution" src="" style="max-width:100%">
+  </div>
+  <div class="uk-width-large-1-3 uk-text-center">
+    <h2>Generated</h2>
+    <img id="image" src="" style="max-width:100%">
+  </div>
+  <div class="uk-width-large-1-3 uk-text-center">
+    <h2>Diff</h2>
+    <img id="diff" src="" style="max-width:100%">
+  </div>
+</div>
+{% endblock %}

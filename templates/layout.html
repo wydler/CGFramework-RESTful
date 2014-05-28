@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+    <head>
+        <title>CGRAPH</title>
+        <link rel="stylesheet" href="static/css/uikit.min.css" />
+        <link rel="stylesheet" href="static/css/addons/uikit.addons.min.css" />
+        <script type=text/javascript src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="static/js/uikit.min.js"></script>
+        <script src="static/js/addons/upload.min.js"></script>
+        <script type=text/javascript>
+            var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+        </script>
+    </head>
+    <body>
+        <div class="uk-container uk-container-center">
+        {% block body %}{% endblock %}
+        </div>
+    </body>
+</html>
