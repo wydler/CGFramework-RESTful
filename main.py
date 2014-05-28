@@ -47,7 +47,7 @@ def index():
             new = ''
             with open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'r') as source:
                 new = re.sub('int main\(', 'int _main(', source.read())
-            with open(os.path.join(ROOT_DIR, 'main.imagebuffer.cpp'), 'w') as fout, open(os.path.join(ROOT_DIR, 'test.cpp'), 'r') as test:
+            with open(os.path.join(ROOT_DIR, 'main.imagebuffer.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'bresenham', 'test.cpp'), 'r') as test:
                 fout.write(new)
                 fout.write(test.read())
 
