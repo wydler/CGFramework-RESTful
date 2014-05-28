@@ -2,60 +2,62 @@
 {% block body %}
 <script type=text/javascript>
   $(function() {
-    var submit_form = function(e) {
-      $.getJSON($SCRIPT_ROOT + '/_add_numbers', {
-        a: $('input[name="a"]').val(),
-        b: $('input[name="b"]').val()
-      }, function(data) {
-        $('#result').text(data.result);
-        $('input[name=a]').focus().select();
-      });
-      return false;
-    };
-
-    $('a#calculate').bind('click', submit_form);
-
-    $('input[type=text]').bind('keydown', function(e) {
-      if (e.keyCode == 13) {
-        submit_form(e);
-      }
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+    socket.on('build', function(msg) {
+      $("#log").append(msg.data);
+      $("#log").scrollTop( 300 );
+    });
+    socket.on('system', function(msg) {
+      console.log('System: ' + msg.data);
     });
 
-    $('input[name=a]').focus();
     var progressbar = $("#progressbar"),
         bar         = progressbar.find('.uk-progress-bar'),
+        log         = $("#log"),
+        details     = $("#details"),
         settings    = {
 
-        action: '/bresenham', // upload url
+          action: '/bresenham', // upload url
+          allow : '*.(cpp)', // allow only images
 
-        allow : '*.(cpp)', // allow only images
-
-        loadstart: function() {
+          loadstart: function() {
             bar.css("width", "0%").text("0%");
             progressbar.removeClass("uk-hidden");
 
             $("#solution").attr("src", "")
             $("#image").attr("src", "")
             $("#diff").attr("src", "")
-        },
 
-        progress: function(percent) {
+            log.empty();
+            log.removeClass("uk-hidden");
+
+            details.addClass("uk-hidden");
+            progressbar.removeClass("uk-progress-danger");
+            progressbar.removeClass("uk-progress-success");
+          },
+
+          progress: function(percent) {
             percent = Math.ceil(percent);
             bar.css("width", percent+"%").text(percent+"%");
-        },
+          },
 
-        allcomplete: function(response) {
-
+          allcomplete: function(response) {
             bar.css("width", "100%").text("100%");
-
             obj = JSON.parse(response);
-            $("#solution").attr("src", "static/bresenham/solutions/rays.png")
-            $("#image").attr("src", "static/bresenham/results/"+obj.id+"/rays.png")
-            $("#diff").attr("src", "static/bresenham/results/"+obj.id+"/diff-rays.png")
+            console.log(obj);
+            if(obj.success == 0) {
+              $("#solution").attr("src", "static/bresenham/solutions/rays.png")
+              $("#image").attr("src", "static/bresenham/results/"+obj.id+"/rays.png")
+              $("#diff").attr("src", "static/bresenham/results/"+obj.id+"/diff-rays.png")
 
-            $("#details").removeClass("uk-hidden");
-        }
-    };
+              details.removeClass("uk-hidden");
+              progressbar.addClass("uk-progress-success");
+            } else {
+              details.addClass("uk-hidden");
+              progressbar.addClass("uk-progress-danger");
+            }
+          }
+        };
 
     var select = new $.UIkit.upload.select($("#upload-select"), settings),
         drop   = new $.UIkit.upload.drop($("#upload-drop"), settings);
@@ -85,4 +87,7 @@
     <img id="diff" src="" style="max-width:100%">
   </div>
 </div>
+
+<pre id="log" class="uk-alert uk-hidden">
+</pre>
 {% endblock %}
