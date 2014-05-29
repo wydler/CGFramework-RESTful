@@ -1,11 +1,26 @@
 {% extends "layout.html" %}
-{% block body %}
+{% block script %}
 <script type=text/javascript>
   $(function() {
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
-    socket.on('build', function(msg) {
-      $("#log").append(msg.data);
-      $("#log").scrollTop( 300 );
+    socket.on('stdout', function(msg) {
+      var result = msg.data.match(/Built target test/i);
+      if (result) {
+        $("#log").append("<span class=\"uk-text-success\"><b>"+msg.data+"</b></span>");
+      } else {
+        $("#log").append(msg.data);
+      }
+    });
+    socket.on('stderr', function(msg) {
+      var result = msg.data.match(/ERROR/i);
+      if (result) {
+        $("#log").append("<span class=\"uk-text-danger\">"+msg.data+"</span>");
+      } else {
+        $("#log").append("<span class=\"uk-text-warning\">"+msg.data+"</span>");
+      }
+    });
+    socket.on('error', function(msg) {
+      $.UIkit.notify(msg.data, {status:'danger'})
     });
     socket.on('system', function(msg) {
       console.log('System: ' + msg.data);
@@ -45,7 +60,7 @@
             bar.css("width", "100%").text("100%");
             obj = JSON.parse(response);
             console.log(obj);
-            if(obj.success == 0) {
+            if (obj.error == 0) {
               $("#solution").attr("src", "static/bresenham/solutions/rays.png")
               $("#image").attr("src", "static/bresenham/results/"+obj.id+"/rays.png")
               $("#diff").attr("src", "static/bresenham/results/"+obj.id+"/diff-rays.png")
@@ -63,31 +78,6 @@
         drop   = new $.UIkit.upload.drop($("#upload-drop"), settings);
   });
 </script>
-
-<h1>Bresenham</h1>
-<div id="upload-drop" class="uk-placeholder uk-text-center">
-    <i class="uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i> Attach source file by dropping them here or <a class="uk-form-file">selecting one <input id="upload-select" type="file"></a>.
-</div>
-
-<div id="progressbar" class="uk-progress uk-hidden">
-  <div class="uk-progress-bar" style="width: 0%;">0%</div>
-</div>
-
-<div id="details" class="uk-grid uk-hidden">
-  <div class="uk-width-large-1-3 uk-text-center">
-    <h2>Original</h2>
-    <img id="solution" src="" style="max-width:100%">
-  </div>
-  <div class="uk-width-large-1-3 uk-text-center">
-    <h2>Generated</h2>
-    <img id="image" src="" style="max-width:100%">
-  </div>
-  <div class="uk-width-large-1-3 uk-text-center">
-    <h2>Diff</h2>
-    <img id="diff" src="" style="max-width:100%">
-  </div>
-</div>
-
-<pre id="log" class="uk-alert uk-hidden">
-</pre>
 {% endblock %}
+
+{% block title %}Bresenham{% endblock %}

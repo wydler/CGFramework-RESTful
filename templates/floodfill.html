@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block script %}
+<script type=text/javascript>
+  $(function() {
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+    socket.on('stdout', function(msg) {
+      var result = msg.data.match(/Built target test/i);
+      if (result) {
+        $("#log").append("<span class=\"uk-text-success\"><b>"+msg.data+"</b></span>");
+      } else {
+        $("#log").append(msg.data);
+      }
+    });
+    socket.on('stderr', function(msg) {
+      var result = msg.data.match(/ERROR/i);
+      if (result) {
+        $("#log").append("<span class=\"uk-text-danger\">"+msg.data+"</span>");
+      } else {
+        $("#log").append("<span class=\"uk-text-warning\">"+msg.data+"</span>");
+      }
+    });
+    socket.on('error', function(msg) {
+      $.UIkit.notify(msg.data, {status:'danger'})
+    });
+    socket.on('system', function(msg) {
+      console.log('System: ' + msg.data);
+    });
+
+    var progressbar = $("#progressbar"),
+        bar         = progressbar.find('.uk-progress-bar'),
+        log         = $("#log"),
+        details     = $("#details"),
+        settings    = {
+
+          action: '/floodfill', // upload url
+          allow : '*.(cpp)', // allow only images
+
+          loadstart: function() {
+            bar.css("width", "0%").text("0%");
+            progressbar.removeClass("uk-hidden");
+
+            $("#solution").attr("src", "")
+            $("#image").attr("src", "")
+            $("#diff").attr("src", "")
+
+            log.empty();
+            log.removeClass("uk-hidden");
+
+            details.addClass("uk-hidden");
+            progressbar.removeClass("uk-progress-danger");
+            progressbar.removeClass("uk-progress-success");
+          },
+
+          progress: function(percent) {
+            percent = Math.ceil(percent);
+            bar.css("width", percent+"%").text(percent+"%");
+          },
+
+          allcomplete: function(response) {
+            bar.css("width", "100%").text("100%");
+            obj = JSON.parse(response);
+            console.log(obj);
+            if (obj.error == 0) {
+              $("#solution").attr("src", "static/floodfill/solutions/rand.png")
+              $("#image").attr("src", "static/floodfill/results/"+obj.id+"/rand.png")
+              $("#diff").attr("src", "static/floodfill/results/"+obj.id+"/diff-rand.png")
+
+              details.removeClass("uk-hidden");
+              progressbar.addClass("uk-progress-success");
+            } else {
+              details.addClass("uk-hidden");
+              progressbar.addClass("uk-progress-danger");
+            }
+          }
+        };
+
+    var select = new $.UIkit.upload.select($("#upload-select"), settings),
+        drop   = new $.UIkit.upload.drop($("#upload-drop"), settings);
+  });
+</script>
+{% endblock %}
+
+{% block title %}Floodfill{% endblock %}

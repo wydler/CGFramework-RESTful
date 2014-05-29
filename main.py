@@ -1,6 +1,7 @@
 import gevent
 import os
 import re
+import select
 import shutil
 import subprocess
 import threading
@@ -12,14 +13,11 @@ from PIL import Image, ImageChops
 from werkzeug import secure_filename
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
-print(ROOT_DIR)
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
-print(TEST_DIR)
 BUILD_DIR = os.path.join(ROOT_DIR, 'build')
-print(BUILD_DIR)
 
-UPLOAD_FOLDER = 'tmp'
 ALLOWED_EXTENSIONS = set(['cpp'])
+IMAGE_SIZE = [512, 512]
 
 app = Flask(__name__)
 app.debug = True
@@ -31,23 +29,45 @@ lock = threading.Lock()
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+def run(command, cwd, namespace):
+    proc = subprocess.Popen(command, shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while proc.poll() is None:
+        (rlist, wlist, xlist) = select.select([proc.stderr], [], [], 0)
+        if rlist:
+            socketio.emit('stderr', {'data': rlist[0].readline()}, namespace=namespace)
+        (rlist, wlist, xlist) = select.select([proc.stdout], [], [], 0)
+        if rlist:
+            socketio.emit('stdout', {'data': rlist[0].readline()}, namespace=namespace)
+    for line in proc.stderr:
+        socketio.emit('stderr', {'data': line}, namespace=namespace)
+    if proc.returncode:
+        raise Exception('Command \''+command+'\' failed, Code: '+str(proc.returncode))
+
+def upload_file(files, directory):
+    files = files.getlist("files[]")
+    file = files[0]
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(directory, filename))
+        return filename
+    else:
+        raise Exception('Error uploading file')
+
+
 @app.route("/bresenham", methods=['GET', 'POST'])
-def index():
+def bresenham():
     if request.method == 'POST':
         lock.acquire()
 
-        id = datetime.now().strftime('%s-%f')
-        RESULT_DIR = os.path.join(TEST_DIR, 'static', 'bresenham', 'results', id)
-        os.makedirs(RESULT_DIR)
+        ERROR_FLAG = False
 
-        files = request.files.getlist("files[]")
-        file = files[0]
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'bresenham', 'results', id)
+            os.makedirs(RESULT_DIR)
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(RESULT_DIR, filename))
-
-            STOP_FLAG = False
+            filename = upload_file(request.files, RESULT_DIR)
 
             new = ''
             with open(os.path.join(RESULT_DIR, filename), 'r') as source:
@@ -57,60 +77,71 @@ def index():
                 fout.write('\n')
                 fout.write(test.read())
 
-            if not STOP_FLAG:
-                proc = subprocess.Popen('cmake ..', shell=True, cwd=BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                while proc.poll() is None:
-                    line = proc.stdout.readline()
-                    if line:
-                        socketio.emit('build', {'data': line}, namespace='/test')
-                        gevent.sleep(0)
-                STOP_FLAG = proc.returncode
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
 
-            if not STOP_FLAG:
-                proc = subprocess.Popen('make test', shell=True, cwd=BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                while proc.poll() is None:
-                    line = proc.stdout.readline()
-                    if line:
-                        socketio.emit('build', {'data': line}, namespace='/test')
-                        gevent.sleep(0)
-                STOP_FLAG = proc.returncode
+            generated = Image.open(os.path.join(BUILD_DIR, 'rays.bmp')).resize(IMAGE_SIZE)
+            original = Image.open(os.path.join(TEST_DIR, 'static', 'bresenham', 'solutions', 'rays.bmp')).resize(IMAGE_SIZE)
+            diff = ImageChops.difference(original, generated)
 
-            if not STOP_FLAG:
-                proc = subprocess.Popen('./test', shell=True, cwd=BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                while proc.poll() is None:
-                    line = proc.stdout.readline()
-                    if line:
-                        socketio.emit('build', {'data': line}, namespace='/test')
-                        gevent.sleep(0)
-                STOP_FLAG = proc.returncode
+            generated.save(os.path.join(RESULT_DIR, 'rays.png'), "PNG", optimize=True)
+            diff.save(os.path.join(RESULT_DIR, 'diff-rays.png'), "PNG", optimize=True)
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
 
-            if not STOP_FLAG:
-                shutil.copy(os.path.join(BUILD_DIR, 'rand.bmp'), os.path.join(RESULT_DIR, 'rand.bmp'))
-                shutil.copy(os.path.join(BUILD_DIR, 'rays.bmp'), os.path.join(RESULT_DIR, 'rays.bmp'))
-                solution = Image.open(os.path.join(RESULT_DIR, 'rays.bmp')).resize([512, 512])
-                image = Image.open(os.path.join(TEST_DIR, 'static', 'bresenham', 'solutions', 'rays.bmp')).resize([512, 512])
-                diff = ImageChops.difference(solution, image)
+        lock.release()
 
-                solution.save(os.path.join(RESULT_DIR, 'rays.png'), "PNG", optimize=True)
-                diff.save(os.path.join(RESULT_DIR, 'diff-rays.png'), "PNG", optimize=True)
+        return jsonify(id=id, error=ERROR_FLAG)
 
-            lock.release()
+    return render_template('bresenham.html')
 
-            return jsonify(id=id, success=STOP_FLAG)
+@app.route("/floodfill", methods=['GET', 'POST'])
+def floodfill():
+    if request.method == 'POST':
+        lock.acquire()
 
-    return render_template('index.html')
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'floodfill', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            new = ''
+            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
+                new = re.sub('int main\(', 'int _main(', source.read())
+            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'floodfill', 'test.cpp'), 'r') as test:
+                fout.write(new)
+                fout.write('\n')
+                fout.write(test.read())
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            generated = Image.open(os.path.join(BUILD_DIR, 'rand.bmp')).resize(IMAGE_SIZE)
+            original = Image.open(os.path.join(TEST_DIR, 'static', 'floodfill', 'solutions', 'rand.bmp')).resize(IMAGE_SIZE)
+            diff = ImageChops.difference(original, generated)
+
+            generated.save(os.path.join(RESULT_DIR, 'rand.png'), "PNG", optimize=True)
+            diff.save(os.path.join(RESULT_DIR, 'diff-rand.png'), "PNG", optimize=True)
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('floodfill.html')
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
     emit('system', {'data': 'Connected'})
 
-@app.route('/_add_numbers', methods=['GET', 'POST'])
-def add_numbers():
-    """Add two numbers server side, ridiculous but well..."""
-    a = request.args.get('a', 0, type=int)
-    b = request.args.get('b', 0, type=int)
-    return jsonify(result=a + b)
-
 if __name__ == "__main__":
-    #app.run(host='0.0.0.0', debug=True)
     socketio.run(app, host='0.0.0.0')
