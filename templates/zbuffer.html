@@ -8,7 +8,7 @@
         details     = $("#details"),
         settings    = {
 
-          action: '/bresenham', // upload url
+          action: '/zbuffer', // upload url
           allow : '*.(cpp)', // allow only images
 
           loadstart: function() {
@@ -37,9 +37,9 @@
             bar.css("width", "100%").text("ID: "+obj.id);
 
             if (obj.error == 0) {
-              $("#solution").attr("src", "static/img/solutions/bresenham.png");
-              $("#image").attr("src", "static/gen/bresenham/results/"+obj.id+"/rays.png");
-              $("#diff").attr("src", "static/gen/bresenham/results/"+obj.id+"/diff-rays.png");
+              $("#solution").attr("src", "static/img/solutions/zbuffer.png");
+              $("#image").attr("src", "static/gen/zbuffer/results/"+obj.id+"/rand.png");
+              $("#diff").attr("src", "static/gen/zbuffer/results/"+obj.id+"/diff-rand.png");
 
               details.removeClass("uk-hidden");
               progressbar.addClass("uk-progress-success");
@@ -56,4 +56,4 @@
 </script>
 {% endblock %}
 
-{% block title %}Bresenham{% endblock %}
+{% block title %}z-Buffer{% endblock %}

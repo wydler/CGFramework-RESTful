@@ -9,6 +9,33 @@
     <script src="static/js/uikit.min.js"></script>
     <script src="static/js/addons/upload.min.js"></script>
     <script src="static/js/addons/notify.min.js"></script>
+    <script type=text/javascript>
+      $(function() {
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+        socket.on('stdout', function(msg) {
+          var result = msg.data.match(/Built target test/i);
+          if (result) {
+            $("#log").append("<span class=\"uk-text-success\"><b>"+msg.data+"</b></span>");
+          } else {
+            $("#log").append(msg.data);
+          }
+        });
+        socket.on('stderr', function(msg) {
+          var result = msg.data.match(/ERROR/i);
+          if (result) {
+            $("#log").append("<span class=\"uk-text-danger\">"+msg.data+"</span>");
+          } else {
+            $("#log").append("<span class=\"uk-text-warning\">"+msg.data+"</span>");
+          }
+        });
+        socket.on('error', function(msg) {
+          $.UIkit.notify(msg.data, {status:'danger'})
+        });
+        socket.on('system', function(msg) {
+          console.log('System: ' + msg.data);
+        });
+      });
+    </script>
     {% block script %}{% endblock %}
   </head>
   <body>
@@ -40,6 +67,9 @@
 
         <div class="uk-width-1-1">
           <div id="details" class="uk-grid uk-hidden">
+            <div class="uk-width-1-1">
+              <p id="pid" class="uk-text-center uk-text-small"></p>
+            </div>
             <div class="uk-width-1-3 uk-text-center">
               <h2>Generated</h2>
               <img id="image" src="" style="max-width:100%">

@@ -8,7 +8,7 @@
         details     = $("#details"),
         settings    = {
 
-          action: '/bresenham', // upload url
+          action: '/rasterization', // upload url
           allow : '*.(cpp)', // allow only images
 
           loadstart: function() {
@@ -33,13 +33,13 @@
           },
 
           allcomplete: function(response) {
-            obj = JSON.parse(response);
+            console.log(obj);
             bar.css("width", "100%").text("ID: "+obj.id);
 
             if (obj.error == 0) {
-              $("#solution").attr("src", "static/img/solutions/bresenham.png");
-              $("#image").attr("src", "static/gen/bresenham/results/"+obj.id+"/rays.png");
-              $("#diff").attr("src", "static/gen/bresenham/results/"+obj.id+"/diff-rays.png");
+              $("#solution").attr("src", "static/img/solutions/rasterization.png");
+              $("#image").attr("src", "static/gen/rasterization/results/"+obj.id+"/rand.png");
+              $("#diff").attr("src", "static/gen/rasterization/results/"+obj.id+"/diff-rand.png");
 
               details.removeClass("uk-hidden");
               progressbar.addClass("uk-progress-success");
@@ -56,4 +56,4 @@
 </script>
 {% endblock %}
 
-{% block title %}Bresenham{% endblock %}
+{% block title %}Triangle Rasterization{% endblock %}

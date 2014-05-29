@@ -2,30 +2,6 @@
 {% block script %}
 <script type=text/javascript>
   $(function() {
-    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
-    socket.on('stdout', function(msg) {
-      var result = msg.data.match(/Built target test/i);
-      if (result) {
-        $("#log").append("<span class=\"uk-text-success\"><b>"+msg.data+"</b></span>");
-      } else {
-        $("#log").append(msg.data);
-      }
-    });
-    socket.on('stderr', function(msg) {
-      var result = msg.data.match(/ERROR/i);
-      if (result) {
-        $("#log").append("<span class=\"uk-text-danger\">"+msg.data+"</span>");
-      } else {
-        $("#log").append("<span class=\"uk-text-warning\">"+msg.data+"</span>");
-      }
-    });
-    socket.on('error', function(msg) {
-      $.UIkit.notify(msg.data, {status:'danger'})
-    });
-    socket.on('system', function(msg) {
-      console.log('System: ' + msg.data);
-    });
-
     var progressbar = $("#progressbar"),
         bar         = progressbar.find('.uk-progress-bar'),
         log         = $("#log"),
@@ -57,13 +33,13 @@
           },
 
           allcomplete: function(response) {
-            bar.css("width", "100%").text("100%");
             obj = JSON.parse(response);
-            console.log(obj);
+            bar.css("width", "100%").text("ID: "+obj.id);
+
             if (obj.error == 0) {
-              $("#solution").attr("src", "static/floodfill/solutions/rand.png")
-              $("#image").attr("src", "static/floodfill/results/"+obj.id+"/rand.png")
-              $("#diff").attr("src", "static/floodfill/results/"+obj.id+"/diff-rand.png")
+              $("#solution").attr("src", "static/img/solutions/floodfill.png");
+              $("#image").attr("src", "static/gen/floodfill/results/"+obj.id+"/rand.png");
+              $("#diff").attr("src", "static/gen/floodfill/results/"+obj.id+"/diff-rand.png");
 
               details.removeClass("uk-hidden");
               progressbar.addClass("uk-progress-success");

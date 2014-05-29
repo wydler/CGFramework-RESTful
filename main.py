@@ -54,6 +54,18 @@ def upload_file(files, directory):
     else:
         raise Exception('Error uploading file')
 
+def compare_images(directory, exercise, pattern):
+    image_build = os.path.join(BUILD_DIR, pattern+'.bmp')
+    image_original = os.path.join(TEST_DIR, 'static', 'img', 'solutions', exercise+'.png')
+    image_generated = os.path.join(directory, pattern+'.png')
+    image_diff = os.path.join(directory, 'diff-'+pattern+'.png')
+
+    Image.open(image_build).resize(IMAGE_SIZE).save(image_generated, "PNG", optimize=True)
+    generated = Image.open(image_generated).resize(IMAGE_SIZE)
+    original = Image.open(image_original).resize(IMAGE_SIZE)
+
+    diff = ImageChops.difference(original, generated)
+    diff.save(image_diff, "PNG", optimize=True)
 
 @app.route("/bresenham", methods=['GET', 'POST'])
 def bresenham():
@@ -64,7 +76,7 @@ def bresenham():
 
         try:
             id = datetime.now().strftime('%s-%f')
-            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'bresenham', 'results', id)
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'bresenham', 'results', id)
             os.makedirs(RESULT_DIR)
 
             filename = upload_file(request.files, RESULT_DIR)
@@ -72,7 +84,7 @@ def bresenham():
             new = ''
             with open(os.path.join(RESULT_DIR, filename), 'r') as source:
                 new = re.sub('int main\(', 'int _main(', source.read())
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'bresenham', 'test.cpp'), 'r') as test:
+            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'bresenham.cpp'), 'r') as test:
                 fout.write(new)
                 fout.write('\n')
                 fout.write(test.read())
@@ -81,12 +93,7 @@ def bresenham():
             run('make test', BUILD_DIR, '/test')
             run('./test', BUILD_DIR, '/test')
 
-            generated = Image.open(os.path.join(BUILD_DIR, 'rays.bmp')).resize(IMAGE_SIZE)
-            original = Image.open(os.path.join(TEST_DIR, 'static', 'bresenham', 'solutions', 'rays.bmp')).resize(IMAGE_SIZE)
-            diff = ImageChops.difference(original, generated)
-
-            generated.save(os.path.join(RESULT_DIR, 'rays.png'), "PNG", optimize=True)
-            diff.save(os.path.join(RESULT_DIR, 'diff-rays.png'), "PNG", optimize=True)
+            compare_images(RESULT_DIR, 'bresenham', 'rays')
         except Exception as ex:
             socketio.emit('error', {'data': str(ex)}, namespace='/test')
             ERROR_FLAG = True
@@ -106,7 +113,7 @@ def floodfill():
 
         try:
             id = datetime.now().strftime('%s-%f')
-            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'floodfill', 'results', id)
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'floodfill', 'results', id)
             os.makedirs(RESULT_DIR)
 
             filename = upload_file(request.files, RESULT_DIR)
@@ -114,7 +121,7 @@ def floodfill():
             new = ''
             with open(os.path.join(RESULT_DIR, filename), 'r') as source:
                 new = re.sub('int main\(', 'int _main(', source.read())
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'floodfill', 'test.cpp'), 'r') as test:
+            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'floodfill.cpp'), 'r') as test:
                 fout.write(new)
                 fout.write('\n')
                 fout.write(test.read())
@@ -123,12 +130,7 @@ def floodfill():
             run('make test', BUILD_DIR, '/test')
             run('./test', BUILD_DIR, '/test')
 
-            generated = Image.open(os.path.join(BUILD_DIR, 'rand.bmp')).resize(IMAGE_SIZE)
-            original = Image.open(os.path.join(TEST_DIR, 'static', 'floodfill', 'solutions', 'rand.bmp')).resize(IMAGE_SIZE)
-            diff = ImageChops.difference(original, generated)
-
-            generated.save(os.path.join(RESULT_DIR, 'rand.png'), "PNG", optimize=True)
-            diff.save(os.path.join(RESULT_DIR, 'diff-rand.png'), "PNG", optimize=True)
+            compare_images(RESULT_DIR, 'floodfill', 'rand')
         except Exception as ex:
             socketio.emit('error', {'data': str(ex)}, namespace='/test')
             ERROR_FLAG = True
@@ -138,6 +140,82 @@ def floodfill():
         return jsonify(id=id, error=ERROR_FLAG)
 
     return render_template('floodfill.html')
+
+@app.route("/rasterization", methods=['GET', 'POST'])
+def rasterization():
+    if request.method == 'POST':
+        lock.acquire()
+
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'rasterization', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            new = ''
+            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
+                new = re.sub('int main\(', 'int _main(', source.read())
+                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
+            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'rasterization.cpp'), 'r') as test:
+                fout.write(new)
+                fout.write('\n')
+                fout.write(test.read())
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            compare_images(RESULT_DIR, 'rasterization', 'rand')
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('rasterization.html')
+
+@app.route("/zbuffer", methods=['GET', 'POST'])
+def zbuffer():
+    if request.method == 'POST':
+        lock.acquire()
+
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'zbuffer', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            new = ''
+            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
+                new = re.sub('int main\(', 'int _main(', source.read())
+                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
+            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'zbuffer.cpp'), 'r') as test:
+                fout.write(new)
+                fout.write('\n')
+                fout.write(test.read())
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            compare_images(RESULT_DIR, 'zbuffer', 'rand')
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('zbuffer.html')
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
