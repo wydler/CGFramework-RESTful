@@ -67,7 +67,7 @@ def compare_images(directory, exercise, pattern):
     diff = ImageChops.difference(original, generated)
     diff.save(image_diff, "PNG", optimize=True)
 
-def generate_test(source_file):
+def generate_test(source_file, test_file):
     new = ''
     with open(source_file, 'r') as source:
         new = re.sub('int main\(', 'int _main(', source.read())
@@ -75,7 +75,7 @@ def generate_test(source_file):
             new = re.sub('#include \<minmax.h\>', '', new)
             new = re.sub(' min\(', ' std::min(', new)
             new = re.sub(' max\(', ' std::max(', new)
-    with open(os.path.join(TEST_DIR, 'code', 'bresenham.cpp'), 'r') as test, open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout:
+    with open(test_file, 'r') as test, open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout:
         fout.write(new)
         fout.write('\n')
         fout.write(test.read())
@@ -94,7 +94,7 @@ def bresenham():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            generate_test(os.path.join(RESULT_DIR, filename))
+            generate_test(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'bresenham.cpp'))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -125,7 +125,7 @@ def floodfill():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            generate_test(os.path.join(RESULT_DIR, filename))
+            generate_test(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'floodfill.cpp'))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -156,7 +156,7 @@ def rasterization():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            generate_test(os.path.join(RESULT_DIR, filename))
+            generate_test(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'rasterization.cpp'))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -187,7 +187,7 @@ def zbuffer():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            generate_test(os.path.join(RESULT_DIR, filename))
+            generate_test(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'zbuffer.cpp'))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
