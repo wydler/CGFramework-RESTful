@@ -84,6 +84,7 @@ def bresenham():
             new = ''
             with open(os.path.join(RESULT_DIR, filename), 'r') as source:
                 new = re.sub('int main\(', 'int _main(', source.read())
+                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
             with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'bresenham.cpp'), 'r') as test:
                 fout.write(new)
                 fout.write('\n')
@@ -121,6 +122,7 @@ def floodfill():
             new = ''
             with open(os.path.join(RESULT_DIR, filename), 'r') as source:
                 new = re.sub('int main\(', 'int _main(', source.read())
+                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
             with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'floodfill.cpp'), 'r') as test:
                 fout.write(new)
                 fout.write('\n')
