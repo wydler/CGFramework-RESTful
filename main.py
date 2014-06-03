@@ -67,6 +67,19 @@ def compare_images(directory, exercise, pattern):
     diff = ImageChops.difference(original, generated)
     diff.save(image_diff, "PNG", optimize=True)
 
+def generate_test(source_file):
+    new = ''
+    with open(source_file, 'r') as source:
+        new = re.sub('int main\(', 'int _main(', source.read())
+        if re.search('#include \<minmax.h\>', new):
+            new = re.sub('#include \<minmax.h\>', '', new)
+            new = re.sub(' min\(', ' std::min(', new)
+            new = re.sub(' max\(', ' std::max(', new)
+    with open(os.path.join(TEST_DIR, 'code', 'bresenham.cpp'), 'r') as test, open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout:
+        fout.write(new)
+        fout.write('\n')
+        fout.write(test.read())
+
 @app.route("/bresenham", methods=['GET', 'POST'])
 def bresenham():
     if request.method == 'POST':
@@ -81,14 +94,7 @@ def bresenham():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            new = ''
-            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
-                new = re.sub('int main\(', 'int _main(', source.read())
-                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'bresenham.cpp'), 'r') as test:
-                fout.write(new)
-                fout.write('\n')
-                fout.write(test.read())
+            generate_test(os.path.join(RESULT_DIR, filename))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -119,14 +125,7 @@ def floodfill():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            new = ''
-            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
-                new = re.sub('int main\(', 'int _main(', source.read())
-                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'floodfill.cpp'), 'r') as test:
-                fout.write(new)
-                fout.write('\n')
-                fout.write(test.read())
+            generate_test(os.path.join(RESULT_DIR, filename))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -157,14 +156,7 @@ def rasterization():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            new = ''
-            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
-                new = re.sub('int main\(', 'int _main(', source.read())
-                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'rasterization.cpp'), 'r') as test:
-                fout.write(new)
-                fout.write('\n')
-                fout.write(test.read())
+            generate_test(os.path.join(RESULT_DIR, filename))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
@@ -195,14 +187,7 @@ def zbuffer():
 
             filename = upload_file(request.files, RESULT_DIR)
 
-            new = ''
-            with open(os.path.join(RESULT_DIR, filename), 'r') as source:
-                new = re.sub('int main\(', 'int _main(', source.read())
-                new = re.sub('#include \<minmax.h\>', 'using namespace std;', new)
-            with open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout, open(os.path.join(TEST_DIR, 'code', 'zbuffer.cpp'), 'r') as test:
-                fout.write(new)
-                fout.write('\n')
-                fout.write(test.read())
+            generate_test(os.path.join(RESULT_DIR, filename))
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
