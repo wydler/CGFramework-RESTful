@@ -1,5 +1,5 @@
 void testRand() {
-    Pixelator p( 512, 512, 64, 64 );
+    Pixelator p( 512, 512, resolution, resolution );
     //initiate z-buffer
     for(int x = 0; x < 64; ++x)
     {
@@ -9,9 +9,9 @@ void testRand() {
         }
     }
 
-    drawTriangle(p, 10, 10, 30,  40, 3, 30,  30, 25, 30,    0, 255, 0);
-    drawTriangle(p,  5,  5, 26,  45, 0,  1,  45, 60,  1,  255, 0, 255);
-    drawTriangle(p,  0,  5, 10,  50, 5, 10,  50, 50, 10,  255, 255, 255);
+    drawTriangle(p, 60, 10, 30,  40, 3, 30,  30, 25, 30,    0, 255, 0);
+    drawTriangle(p, 10, 10, 26,  45, 0,  1,  45, 60,  1,  255, 0, 255);
+    drawTriangle(p,  5,  0, 10,  50, 5, 10,  50, 50, 10,  255, 255, 255);
 
     p.writeBMP("rand.bmp");
 }
