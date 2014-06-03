@@ -33,7 +33,7 @@
           },
 
           allcomplete: function(response) {
-            console.log(obj);
+            obj = JSON.parse(response);
             bar.css("width", "100%").text("ID: "+obj.id);
 
             if (obj.error == 0) {
