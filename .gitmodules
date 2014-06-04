@@ -1,0 +1,3 @@
+[submodule "CGFramework"]
+	path = CGFramework
+	url = git://github.com/zwostein/CGFramework.git
