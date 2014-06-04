@@ -12,8 +12,8 @@ from flask.ext.socketio import SocketIO, emit
 from PIL import Image, ImageChops
 from werkzeug import secure_filename
 
-ROOT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
-TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+TEST_DIR = os.path.join(ROOT_DIR)
 BUILD_DIR = os.path.join(ROOT_DIR, 'build')
 
 ALLOWED_EXTENSIONS = set(['cpp'])
@@ -75,7 +75,7 @@ def generate_test(source_file, test_file):
             new = re.sub('#include \<minmax.h\>', '', new)
             new = re.sub(' min\(', ' std::min(', new)
             new = re.sub(' max\(', ' std::max(', new)
-    with open(test_file, 'r') as test, open(os.path.join(ROOT_DIR, 'test.cpp'), 'w') as fout:
+    with open(test_file, 'r') as test, open(os.path.join(TEST_DIR, 'test.cpp'), 'w') as fout:
         fout.write(new)
         fout.write('\n')
         fout.write(test.read())
