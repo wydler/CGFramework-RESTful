@@ -80,6 +80,39 @@ def generate_test(source_file, test_file):
         fout.write('\n')
         fout.write(test.read())
 
+def generate_test_ss(source_file, test_file):
+    new = ''
+    with open(source_file, 'r') as source:
+        new = re.sub('int main\(', 'int _main(', source.read())
+        new = re.sub('#include <stdlib.h>', '#include <stdlib.h>\n#include <limits.h>', new)
+        new = re.sub('drawConvexPolyAA\(std::vector<Coord> points, Color &color\)', 'drawConvexPolyAA(std::vector<Coord> points, Color const &color)', new)
+        new = re.sub('drawConvexPoly\(int \*x, int \*y, int num, Color &color\)', 'drawConvexPoly(int *x, int *y, int num, Color const &color)', new)
+        new = re.sub('setPixel\(int x, int y, Color& color\)', 'setPixel(int x, int y, Color const &color)', new)
+        if re.search('#include \<minmax.h\>', new):
+            new = re.sub('#include \<minmax.h\>', '', new)
+            new = re.sub(' min\(', ' std::min(', new)
+            new = re.sub(' max\(', ' std::max(', new)
+            new = re.sub(' max\(', ' std::max(', new)
+    with open(test_file, 'r') as test, open(os.path.join(TEST_DIR, 'test.cpp'), 'w') as fout:
+        fout.write(new)
+        fout.write('\n')
+        fout.write(test.read())
+
+def generate_test_tf(source_file, test_file):
+    new = ''
+    with open(source_file, 'r') as source:
+        new = re.sub('int main\(', 'int main(', source.read())
+        new = re.sub('p.wait\(\);', '', new)
+        new = re.sub('p.writeBMP\("output.bmp"\);', 'p.writeBMP("rand.bmp");', new)
+        if re.search('#include \<minmax.h\>', new):
+            new = re.sub('#include \<minmax.h\>', '', new)
+            new = re.sub(' min\(', ' std::min(', new)
+            new = re.sub(' max\(', ' std::max(', new)
+    with open(test_file, 'r') as test, open(os.path.join(TEST_DIR, 'test.cpp'), 'w') as fout:
+        fout.write(new)
+        fout.write('\n')
+        fout.write(test.read())
+
 @app.route("/bresenham", methods=['GET', 'POST'])
 def bresenham():
     if request.method == 'POST':
@@ -203,6 +236,99 @@ def zbuffer():
         return jsonify(id=id, error=ERROR_FLAG)
 
     return render_template('zbuffer.html')
+
+@app.route("/supersampling", methods=['GET', 'POST'])
+def supersampling():
+    if request.method == 'POST':
+        lock.acquire()
+
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'supersampling', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            generate_test_ss(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'supersampling.cpp'))
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            compare_images(RESULT_DIR, 'supersampling', 'rand')
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('supersampling.html')
+
+@app.route("/transformations", methods=['GET', 'POST'])
+def transformations():
+    if request.method == 'POST':
+        lock.acquire()
+
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'transformations', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            generate_test_tf(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'transformations.cpp'))
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            compare_images(RESULT_DIR, 'transformations', 'rand')
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('transformations.html')
+
+@app.route("/camera", methods=['GET', 'POST'])
+def camera():
+    if request.method == 'POST':
+        lock.acquire()
+
+        ERROR_FLAG = False
+
+        try:
+            id = datetime.now().strftime('%s-%f')
+            RESULT_DIR = os.path.join(TEST_DIR, 'static', 'gen', 'camera', 'results', id)
+            os.makedirs(RESULT_DIR)
+
+            filename = upload_file(request.files, RESULT_DIR)
+
+            generate_test_tf(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'camera.cpp'))
+
+            run('cmake ..', BUILD_DIR, '/test')
+            run('make test', BUILD_DIR, '/test')
+            run('./test', BUILD_DIR, '/test')
+
+            compare_images(RESULT_DIR, 'camera', 'rand')
+        except Exception as ex:
+            socketio.emit('error', {'data': str(ex)}, namespace='/test')
+            ERROR_FLAG = True
+
+        lock.release()
+
+        return jsonify(id=id, error=ERROR_FLAG)
+
+    return render_template('camera.html')
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
