@@ -103,7 +103,7 @@ def generate_test_tf(source_file, test_file):
     with open(source_file, 'r') as source:
         new = re.sub('int main\(', 'int main(', source.read())
         new = re.sub('p.wait\(\);', '', new)
-        new = re.sub('p.writeBMP\("output.bmp"\);', 'p.writeBMP("rand.bmp");', new)
+        new = re.sub('[//]*p.writeBMP\("output.bmp"\);', 'p.writeBMP("rand.bmp");', new)
         if re.search('#include \<minmax.h\>', new):
             new = re.sub('#include \<minmax.h\>', '', new)
             new = re.sub(' min\(', ' std::min(', new)
@@ -284,6 +284,11 @@ def transformations():
 
             generate_test_tf(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'transformations.cpp'))
 
+            try:
+                os.remove(os.path.join(BUILD_DIR, 'rand.bmp'))
+            except:
+                pass
+
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
             run('./test', BUILD_DIR, '/test')
@@ -314,6 +319,11 @@ def camera():
             filename = upload_file(request.files, RESULT_DIR)
 
             generate_test_tf(os.path.join(RESULT_DIR, filename), os.path.join(TEST_DIR, 'code', 'camera.cpp'))
+
+            try:
+                os.remove(os.path.join(BUILD_DIR, 'rand.bmp'))
+            except:
+                pass
 
             run('cmake ..', BUILD_DIR, '/test')
             run('make test', BUILD_DIR, '/test')
